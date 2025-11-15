@@ -1,6 +1,6 @@
 use nalgebra::Matrix1x4;
-use num::Float;
-use std::fmt::Debug;
+use num::{Float, Integer, Num, NumCast};
+use std::{fmt::Debug, ops::Neg};
 
 /* ------------------------------------------------------------------------------
  * Type aliases
@@ -15,9 +15,15 @@ type Xyah<T> = Matrix1x4<T>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rect<T>
 where
-    T: Debug + Float,
+    T: Debug,
 {
     tlwh: Matrix1x4<T>,
+}
+
+impl<T: Clone + Debug + Float + Default> Default for Rect<T> {
+    fn default() -> Self {
+        Self::new(T::default(), T::default(), T::default(), T::default())
+    }
 }
 
 impl<T> Rect<T>
@@ -36,7 +42,7 @@ where
     }
 
     #[inline(always)]
-    pub(crate) fn set_x(&mut self, x: T) {
+    pub fn set_x(&mut self, x: T) {
         self.tlwh[(0, 0)] = x;
     }
 
@@ -46,7 +52,7 @@ where
     }
 
     #[inline(always)]
-    pub(crate) fn set_y(&mut self, y: T) {
+    pub fn set_y(&mut self, y: T) {
         self.tlwh[(0, 1)] = y;
     }
 
@@ -56,7 +62,7 @@ where
     }
 
     #[inline(always)]
-    pub(crate) fn set_width(&mut self, width: T) {
+    pub fn set_width(&mut self, width: T) {
         self.tlwh[(0, 2)] = width;
     }
 
@@ -66,8 +72,48 @@ where
     }
 
     #[inline(always)]
-    pub(crate) fn set_height(&mut self, height: T) {
+    pub fn set_height(&mut self, height: T) {
         self.tlwh[(0, 3)] = height;
+    }
+
+    #[inline(always)]
+    pub fn x1(&self) -> T {
+        self.tlwh[(0, 0)]
+    }
+
+    #[inline(always)]
+    pub fn y1(&self) -> T {
+        self.tlwh[(0, 1)]
+    }
+
+    #[inline(always)]
+    pub fn x2(&self) -> T {
+        self.tlwh[(0, 0)] + self.tlwh[(0, 2)]
+    }
+
+    #[inline(always)]
+    pub fn y2(&self) -> T {
+        self.tlwh[(0, 1)] + self.tlwh[(0, 3)]
+    }
+
+    #[inline(always)]
+    pub fn tl_x(&self) -> T {
+        self.tlwh[(0, 0)]
+    }
+
+    #[inline(always)]
+    pub fn tl_y(&self) -> T {
+        self.tlwh[(0, 1)]
+    }
+
+    #[inline(always)]
+    pub fn br_x(&self) -> T {
+        self.tlwh[(0, 0)] + self.tlwh[(0, 2)]
+    }
+
+    #[inline(always)]
+    pub fn br_y(&self) -> T {
+        self.tlwh[(0, 1)] + self.tlwh[(0, 3)]
     }
 
     pub fn area(&self) -> T {

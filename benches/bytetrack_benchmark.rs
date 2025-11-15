@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use jamtrack_rs::{byte_tracker::ByteTracker, object::Object, rect::Rect};
 use serde::Deserialize;
 use serde_json;
@@ -24,7 +24,7 @@ struct DetectionJson {
 #[derive(Debug, Deserialize, Clone)]
 struct DetectionResultJson {
     frame_id: String,
-    prob: String,
+    score: String,
     x: String,
     y: String,
     width: String,
@@ -37,9 +37,9 @@ impl From<DetectionResultJson> for Object {
         let y = detection_result.y.parse::<f32>().unwrap();
         let width = detection_result.width.parse::<f32>().unwrap();
         let height = detection_result.height.parse::<f32>().unwrap();
-        let prob = detection_result.prob.parse::<f32>().unwrap();
+        let score = detection_result.score.parse::<f32>().unwrap();
         let rect = Rect::new(x, y, width, height);
-        Object::new(rect, prob, None)
+        Object::new(rect, score, 0, 0, None)
     }
 }
 

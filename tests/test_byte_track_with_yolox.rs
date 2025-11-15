@@ -23,7 +23,7 @@ struct DetectionJson {
 #[derive(Debug, Deserialize)]
 struct DetectionReusltJson {
     frame_id: String,
-    prob: String,
+    score: String,
     x: String,
     y: String,
     width: String,
@@ -59,14 +59,14 @@ struct Detection {
     name: String,
     fps: usize,
     track_buffer: usize,
-    results: HashMap<usize, Vec<DetectionReuslt>>,
+    results: HashMap<usize, Vec<DetectionResult>>,
 }
 
 impl Detection {
     fn new(detection: &DetectionJson) -> Self {
-        let mut results: HashMap<usize, Vec<DetectionReuslt>> = HashMap::new();
+        let mut results: HashMap<usize, Vec<DetectionResult>> = HashMap::new();
         for detection in &detection.results {
-            let detection = DetectionReuslt::new(detection);
+            let detection = DetectionResult::new(detection);
             let frame_id = detection.frame_id;
             if results.contains_key(&frame_id) {
                 results.get_mut(&frame_id).unwrap().push(detection);
@@ -85,20 +85,20 @@ impl Detection {
 }
 
 #[derive(Debug, Clone)]
-struct DetectionReuslt {
+struct DetectionResult {
     frame_id: usize,
-    prob: f32,
+    score: f32,
     x: f32,
     y: f32,
     width: f32,
     height: f32,
 }
 
-impl DetectionReuslt {
+impl DetectionResult {
     fn new(detection: &DetectionReusltJson) -> Self {
         Self {
             frame_id: detection.frame_id.parse().unwrap(),
-            prob: detection.prob.parse().unwrap(),
+            score: detection.score.parse().unwrap(),
             x: detection.x.parse().unwrap(),
             y: detection.y.parse().unwrap(),
             width: detection.width.parse().unwrap(),
@@ -107,7 +107,7 @@ impl DetectionReuslt {
     }
 }
 
-impl Into<jamtrack_rs::object::Object> for DetectionReuslt {
+impl Into<jamtrack_rs::object::Object> for DetectionResult {
     fn into(self) -> jamtrack_rs::object::Object {
         jamtrack_rs::object::Object::new(
             jamtrack_rs::rect::Rect::new(
@@ -116,7 +116,9 @@ impl Into<jamtrack_rs::object::Object> for DetectionReuslt {
                 self.width,
                 self.height,
             ),
-            self.prob,
+            self.score,
+            0,
+            0,
             None,
         )
     }
@@ -195,6 +197,8 @@ impl Into<jamtrack_rs::object::Object> for TrackingResult {
                 self.height,
             ),
             0.0,
+            0,
+            0,
             None,
         )
     }
@@ -240,7 +244,7 @@ fn test_byte_track_with_yolox() {
             .get(&frame_id)
             .unwrap()
             .iter()
-            .map(|v| <DetectionReuslt>::into(v.clone()))
+            .map(|v| <DetectionResult>::into(v.clone()))
             .collect();
         let outputs = byte_tracker.update(&objects).unwrap();
 

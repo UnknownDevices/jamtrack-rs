@@ -10,7 +10,7 @@ use std::{collections::HashMap, vec};
  * ByteTracker
  * ---------------------------------------------------------------------------- */
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ByteTracker {
     track_thresh: f32,
     high_thresh: f32,
@@ -27,8 +27,7 @@ pub struct ByteTracker {
 
 impl ByteTracker {
     pub fn new(
-        frame_rate: usize,
-        track_buffer: usize,
+        max_time_lost: usize,
         track_thresh: f32,
         high_thresh: f32,
         match_thresh: f32,
@@ -37,16 +36,29 @@ impl ByteTracker {
             track_thresh,
             high_thresh,
             match_thresh,
-            max_time_lost: (track_buffer as f32 * frame_rate as f32 / 30.0)
-                as usize,
-
+            max_time_lost,
             frame_id: 0,
             track_id_count: 0,
-
             tracked_stracks: Vec::new(),
             lost_stracks: Vec::new(),
             removed_stracks: Vec::new(),
         }
+    }
+
+    pub fn get_max_time_lost(&self) -> usize {
+        self.max_time_lost
+    }
+
+    pub fn get_track_thresh(&self) -> f32 {
+        self.track_thresh
+    }
+
+    pub fn get_high_thresh(&self) -> f32 {
+        self.high_thresh
+    }
+
+    pub fn get_match_thresh(&self) -> f32 {
+        self.match_thresh
     }
 
     pub fn update(
@@ -62,8 +74,13 @@ impl ByteTracker {
         let mut det_low_stracks = Vec::new();
 
         for obj in objects {
-            let strack = STrack::new(obj.get_rect(), obj.get_prob());
-            if obj.get_prob() >= self.track_thresh {
+            let strack = STrack::new(
+                obj.get_rect().clone(),
+                obj.get_score(),
+                obj.label,
+                obj.group,
+            );
+            if obj.get_score() >= self.track_thresh {
                 det_stracks.push(strack);
             } else {
                 det_low_stracks.push(strack);
@@ -434,8 +451,8 @@ impl ByteTracker {
     }
 
     pub fn calc_ious(
-        a_rects: &Vec<Rect<f32>>,
-        b_rects: &Vec<Rect<f32>>,
+        a_rects: &Vec<&Rect<f32>>,
+        b_rects: &Vec<&Rect<f32>>,
     ) -> Vec<Vec<f32>> {
         let mut ious = vec![vec![0.0; b_rects.len()]; a_rects.len()];
         if a_rects.len() * b_rects.len() == 0 {
@@ -455,23 +472,19 @@ impl ByteTracker {
         a_tracks: &Vec<STrack>,
         b_tracks: &Vec<STrack>,
     ) -> Vec<Vec<f32>> {
-        let mut a_rects = Vec::new();
-        let mut b_rects = Vec::new();
-
-        for track in a_tracks.iter() {
-            a_rects.push(track.get_rect());
-        }
-
-        for track in b_tracks.iter() {
-            b_rects.push(track.get_rect());
-        }
+        let a_rects = a_tracks.iter().map(|t| &t.rect).collect::<Vec<_>>();
+        let b_rects = b_tracks.iter().map(|t| &t.rect).collect::<Vec<_>>();
 
         let ious = Self::calc_ious(&a_rects, &b_rects);
         let mut cost_matrix = Vec::new();
         for ai in 0..a_tracks.len() {
             let mut iou = Vec::new();
             for bi in 0..b_tracks.len() {
-                iou.push(1.0 - ious[ai][bi]);
+                if a_tracks[ai].group != b_tracks[bi].group {
+                    iou.push(f32::MAX);
+                } else {
+                    iou.push(1.0 - ious[ai][bi]);
+                }
             }
             cost_matrix.push(iou);
         }
@@ -517,8 +530,7 @@ impl ByteTracker {
         if n_rows != n_cols && !extend_cost {
             return Err(ByteTrackError::ExecLapjvError(format!(
                 "When n_rows {} is not equal to n_cols {} and extend_cost is false, n_rows should be equal to n_cols",
-                n_rows,
-                n_cols
+                n_rows, n_cols
             )));
         }
 

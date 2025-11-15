@@ -23,8 +23,17 @@ impl Debug for STrack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "STrack {{ track_id: {}, frame_id: {}, start_frame_id: {}, tracklet_len: {}, state: {:?}, is_activated: {}, score: {}, rect: {:?} }}",
-            self.track_id, self.frame_id, self.start_frame_id, self.tracklet_len, self.state, self.is_activated, self.score, self.rect
+            "STrack {{ track_id: {}, frame_id: {}, start_frame_id: {}, tracklet_len: {}, state: {:?}, is_activated: {}, score: {}, rect: {:?}, label: {}, group: {} }}",
+            self.track_id,
+            self.frame_id,
+            self.start_frame_id,
+            self.tracklet_len,
+            self.state,
+            self.is_activated,
+            self.score,
+            self.rect,
+            self.label,
+            self.group
         )
     }
 }
@@ -34,10 +43,12 @@ pub(crate) struct STrack {
     kalman_filter: KalmanFilter,
     mean: StateMean,
     covariance: StateCov,
-    rect: Rect<f32>,
+    pub rect: Rect<f32>,
     state: STrackState,
     is_activated: bool,
-    score: f32,
+    pub score: f32,
+    pub label: i32,
+    pub group: i32,
     track_id: usize,
     frame_id: usize,
     start_frame_id: usize,
@@ -45,7 +56,12 @@ pub(crate) struct STrack {
 }
 
 impl STrack {
-    pub(crate) fn new(rect: Rect<f32>, score: f32) -> Self {
+    pub(crate) fn new(
+        rect: Rect<f32>,
+        score: f32,
+        label: i32,
+        group: i32,
+    ) -> Self {
         let kalman_filter = KalmanFilter::new(1.0 / 20., 1.0 / 160.);
         let mean = StateMean::zeros();
         let covariance = StateCov::zeros();
@@ -57,6 +73,8 @@ impl STrack {
             state: STrackState::New,
             is_activated: false,
             score,
+            label,
+            group,
             track_id: 0,
             frame_id: 0,
             start_frame_id: 0,
@@ -78,6 +96,8 @@ impl STrack {
             state: STrackState::New,
             is_activated: false,
             score: 0.0,
+            label: 0,
+            group: 0,
             track_id: track_id,
             frame_id: 0,
             start_frame_id: 0,

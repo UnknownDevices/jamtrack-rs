@@ -6,25 +6,35 @@ use std::fmt::Debug;
  * Object struct
  * ------------------------------------------------------------------------------ */
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Object {
-    rect: Rect<f32>,
-    prob: f32,
-    track_id: Option<usize>,
+    pub rect: Rect<f32>,
+    pub score: f32,
+    pub label: i32,
+    pub group: i32,
+    pub track_id: Option<usize>,
 }
 
 impl Object {
-    pub fn new(rect: Rect<f32>, prob: f32, track_id: Option<usize>) -> Self {
+    pub fn new(
+        rect: Rect<f32>,
+        score: f32,
+        label: i32,
+        group: i32,
+        track_id: Option<usize>,
+    ) -> Self {
         Self {
             rect,
-            prob,
+            score,
+            label,
+            group,
             track_id,
         }
     }
 
     #[inline(always)]
-    pub fn get_rect(&self) -> Rect<f32> {
-        self.rect.clone()
+    pub fn get_rect(&self) -> &Rect<f32> {
+        &self.rect
     }
 
     #[inline(always)]
@@ -48,8 +58,8 @@ impl Object {
     }
 
     #[inline(always)]
-    pub fn get_prob(&self) -> f32 {
-        self.prob
+    pub fn get_score(&self) -> f32 {
+        self.score
     }
 
     #[inline(always)]
@@ -63,6 +73,8 @@ impl From<STrack> for Object {
         Object::new(
             strack.get_rect(),
             strack.get_score(),
+            strack.label,
+            strack.group,
             Some(strack.get_track_id()),
         )
     }
@@ -73,6 +85,8 @@ impl From<&STrack> for Object {
         Object::new(
             strack.get_rect(),
             strack.get_score(),
+            strack.label,
+            strack.group,
             Some(strack.get_track_id()),
         )
     }
