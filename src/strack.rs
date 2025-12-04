@@ -121,8 +121,18 @@ impl STrack {
     }
 
     #[inline(always)]
+    pub(crate) fn get_label(&self) -> i32 {
+        return self.label;
+    }
+
+    #[inline(always)]
     pub(crate) fn get_score(&self) -> f32 {
         return self.score;
+    }
+
+    #[inline(always)]
+    pub(crate) fn get_group(&self) -> i32 {
+        return self.group;
     }
 
     #[inline(always)]
@@ -174,6 +184,7 @@ impl STrack {
 
         self.state = STrackState::Tracked;
         self.is_activated = true;
+        self.label = new_track.get_label();
         self.score = new_track.get_score();
 
         if 0 <= new_track_id {
@@ -203,6 +214,7 @@ impl STrack {
 
         self.state = STrackState::Tracked;
         self.is_activated = true;
+        self.label = new_track.get_label();
         self.score = new_track.get_score();
         self.frame_id = frame_id;
         self.tracklet_len += 1;
